@@ -21,7 +21,7 @@ class TM1637:
     __Clkpin = 0
     __Datapin = 0
     __brightness = 1.0  # default to max brightness
-    __currentData = [0, 0, 0, 0]
+    __currentData = [0, 0, 0, 0, 0, 0]
 
     def __init__(self, CLK, DIO, brightness):
         self.__Clkpin = CLK
@@ -41,7 +41,7 @@ class TM1637:
         point = self.__doublePoint
         self.__brightness = 0
         self.__doublePoint = False
-        data = [0x7F, 0x7F, 0x7F, 0x7F]
+        data = [0x7F, 0x7F, 0x7F, 0x7F, 0x7F, 0x7F]
         self.Show(data)
         # Restore previous settings:
         self.__brightness = b
@@ -54,22 +54,24 @@ class TM1637:
             self.Show1(i, int(s[i]))
 
     def Show(self, data):
-        for i in range(0, 4):
+        for i in range(0, 6):
             self.__currentData[i] = data[i]
-
+       
         self.start()
         self.writeByte(ADDR_AUTO)
         self.br()
         self.writeByte(STARTADDR)
-        for i in range(0, 4):
+        #for i in range(0, 4):
+        # here we correct for weird digit order of [2][1][0][5][4][3]
+        for i in [2,1,0,5,4,3]
             self.writeByte(self.coding(data[i]))
         self.br()
         self.writeByte(0x88 + int(self.__brightness))
         self.stop()
 
     def Show1(self, DigitNumber, data):
-        """show one Digit (number 0...3)"""
-        if(DigitNumber < 0 or DigitNumber > 3):
+        """show one Digit (number 0...5)"""
+        if(DigitNumber < 0 or DigitNumber > 5):
             return  # error
 
         self.__currentData[DigitNumber] = data
@@ -88,11 +90,11 @@ class TM1637:
         n_str = str(n)
         k = len(n_str)
 
-        for i in range(0, k + 4):
+        for i in range(0, k + 6):
             if (i < k):
-                self.Show([int(n_str[i-3]) if i-3 >= 0 else None, int(n_str[i-2]) if i-2 >= 0 else None, int(n_str[i-1]) if i-1 >= 0 else None, int(n_str[i]) if i >= 0 else None])
+                self.Show([int(n_str[i-5]) if i-5 >= 0 else None, int(n_str[i-2]) if i-2 >= 0 else None, int(n_str[i-1]) if i-1 >= 0 else None, int(n_str[i]) if i >= 0 else None])
             elif (i >= k):
-                self.Show([int(n_str[i-3]) if (i-3 < k and i-3 >= 0) else None, int(n_str[i-2]) if (i-2 < k and i-2 >= 0) else None, int(n_str[i-1]) if (i-1 < k and i-1 >= 0) else None, None])
+                self.Show([int(n_str[i-5]) if (i-5 < k and i-5 >= 0) else None, int(n_str[i-4]) if (i-4 < k and i-4 >= 0) else None, int(n_str[i-1]) if (i-1 < k and i-1 >= 0) else None, None])
             sleep(1)
 
     def SetBrightness(self, percent):
@@ -178,7 +180,9 @@ class TM1637:
             d1 = hour % 10
             d2 = t.tm_min // 10
             d3 = t.tm_min % 10
-            digits = [d0, d1, d2, d3]
+            d4 = t.tm_sec // 10
+            d5 = t.tm_sec % 10
+            digits = [d0, d1, d2, d3, d4, d5]
             self.Show(digits)
             # # Optional visual feedback of running alarm:
             # print digits
